@@ -1,70 +1,134 @@
-import Character from './Character.js'
-import Renderer from './Renderer.js'
+/* global createjs */
 
-// const EventEmitter = require('events')
-// const _ = require('lodash')
+const STAGE_COLUMN_SIZE = 48
+const STAGE_COLUMN_WIDTH = 8
+const STAGE_COLUMN_HEIGHT = 8
 
-const renderer = new Renderer()
-renderer.setColSize(16, 1)
-document.body.appendChild(renderer.canvas)
+const canvas = document.createElement('canvas')
+canvas.width = STAGE_COLUMN_SIZE * STAGE_COLUMN_WIDTH
+canvas.height = STAGE_COLUMN_SIZE * STAGE_COLUMN_HEIGHT
+document.body.appendChild(canvas)
 
-const ossan = new Character({
-  image: 'img/1173010501.png',
-  direction: 'right',
-})
-const dragon = new Character({
-  image: 'img/1011010501.png',
-  x: 15,
-  direction: 'left'
-})
+const stage = new createjs.Stage(canvas)
 
-const renderLoop = () => {
-  requestAnimationFrame(renderLoop)
+class Character {
+  constructor({image, x, y, direction}) {
+    this._x = x || 0
+    this._y = y || 0
+    this._direction = direction || 'front'
+    this._spriteSheet = new createjs.SpriteSheet({
+      images: [image],
+      frames: {
+        width: STAGE_COLUMN_SIZE,
+        height: STAGE_COLUMN_SIZE,
+      },
+      animations: {
+        front: {
+          frames: [0, 1, 2],
+          speed: .25,
+        },
+        back: {
+          frames: [9, 10, 11],
+          speed: .25,
+        },
+        left: {
+          frames: [3, 4, 5],
+          speed: .25,
+        },
+        right: {
+          frames: [6, 7, 8],
+          speed: .25,
+        },
+      },
+    })
+    this._sprite = new createjs.Sprite(this._spriteSheet, this._direction)
+  }
 
-  renderer.draw(ctx => {
-    ossan.draw(ctx)
-    dragon.draw(ctx)
-  })
-}
-renderLoop()
+  getSprite() {
+    return this._sprite
+  }
 
-document.addEventListener('keydown', e => {
-  switch (e.key) {
-    case 'ArrowLeft': {
-      ossan.direction = 'left'
-      if (ossan.x > 0) {
-        ossan.x--
-      }
-      console.log('left')
-      break
-    }
-
-    case 'ArrowRight': {
-      ossan.direction = 'right'
-      if (ossan.x < 16 - 1) {
-        ossan.x++
-      }
-      console.log('right')
-      break
-    }
-
-    case 'ArrowUp': {
-      ossan.direction = 'top'
-      console.log('top');
-      break
-    }
-
-    case 'ArrowDown': {
-      ossan.direction = 'bottom'
-      console.log('bottom');
-      break
-    }
-
-    case ' ': {
-      ossan.alpha = .5
-      requestAnimationFrame(() => ossan.alpha = 1)
-      console.log('space');
-      break
+  setDirection(direction) {
+    if (this._direction !== direction) {
+      this._direction = direction
+      this._sprite.gotoAndPlay(direction)
     }
   }
+
+  getPosition() {
+    return {
+      x: this._x,
+      y: this._y
+    }
+  }
+
+  setPosition({x, y}) {
+    if (typeof x !== 'undefined' && this._x !== x) {
+      const isOutsize = x < 0 || x > STAGE_COLUMN_WIDTH - 1
+      if (isOutsize) return
+
+      this._x = x
+      this._sprite.x = STAGE_COLUMN_SIZE * x
+    }
+    if (typeof y !== 'undefined' && this._y !== y) {
+      const isOutsize = y < 0 || y > STAGE_COLUMN_HEIGHT - 1
+      if (isOutsize) return
+
+      this._y = y
+      this._sprite.y = STAGE_COLUMN_SIZE * y
+    }
+  }
+}
+
+class Player extends Character {
+  constructor(opts) {
+    super(opts)
+
+    document.addEventListener('keydown', this.onKeyDown)
+  }
+
+  onKeyDown = e => {
+    const currentPosition = this.getPosition()
+
+    switch (e.code) {
+      case 'ArrowDown': {
+        this.setDirection('front')
+        this.setPosition({y: currentPosition.y + 1})
+        break
+      }
+
+      case 'ArrowUp': {
+        this.setDirection('back')
+        this.setPosition({y: currentPosition.y - 1})
+        break
+      }
+
+      case 'ArrowLeft': {
+        this.setDirection('left')
+        this.setPosition({x: currentPosition.x - 1})
+        break
+      }
+
+      case 'ArrowRight': {
+        this.setDirection('right')
+        this.setPosition({x: currentPosition.x + 1})
+        break
+      }
+    }
+  }
+}
+
+class Enemy extends Character {}
+
+const ossan = new Player({
+  image: 'img/ossan.png',
+  x: 0,
+  y: 0,
+  direction: 'right'
 })
+stage.addChild(ossan.getSprite())
+
+const update = () => {
+  stage.update()
+}
+createjs.Ticker.addEventListener('tick', update)

@@ -1080,6 +1080,12 @@ create-hmac@^1.1.0, create-hmac@^1.1.2:
     create-hash "^1.1.0"
     inherits "^2.0.1"
 
+CreateJS/EaselJS:
+  name EaselJS
+  version "0.8.2"
+  resolved "https://codeload.github.com/CreateJS/EaselJS/tar.gz/2b15ef9c07331f4fc74e68385f9ac9aec1355d99"
+  registry bower
+
 cryptiles@2.x.x:
   version "2.0.5"
   resolved "https://registry.yarnpkg.com/cryptiles/-/cryptiles-2.0.5.tgz#3bdfecdc608147c1c67202fa291e7dca59eaa3b8"
